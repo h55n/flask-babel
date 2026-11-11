@@ -22,7 +22,7 @@ jobs:
       - name: Install Poetry in an isolated tool environment
         run: |
           python -m venv "$RUNNER_TEMP/poetry-tool"
-          "$RUNNER_TEMP/poetry-tool/bin/pip" install poetry==1.8.5
+          "$RUNNER_TEMP/poetry-tool/bin/pip" install poetry==1.8.5 packaging==24.2
           echo "$RUNNER_TEMP/poetry-tool/bin" >> "$GITHUB_PATH"
       - name: Set up project Python
         uses: actions/setup-python@v5
