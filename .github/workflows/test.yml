@@ -1,17 +1,43 @@
-name: Tests
-
-on: [push]
-
+name: Verify reflected percent formatting
+on:
+  push:
+    branches: [verify/reflected-percent-matrix]
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   test:
-    name: Testing
-    uses: tktech/python-standard/.github/workflows/test.yml@v1
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", pypy3.9]
-    with:
-      use_poetry: true
-      use_sphinx: true
-      use_black: true
-      python_version: ${{ matrix.python-version }}
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', 'pypy3.9']
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - name: Set up Poetry tooling Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Poetry in an isolated tool environment
+        run: |
+          python -m venv "$RUNNER_TEMP/poetry-tool"
+          "$RUNNER_TEMP/poetry-tool/bin/pip" install poetry==1.8.5
+          echo "$RUNNER_TEMP/poetry-tool/bin" >> "$GITHUB_PATH"
+      - name: Set up project Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install project dependencies using the matrix interpreter
+        run: |
+          poetry env use "$(command -v python)"
+          poetry install --all-extras
+          poetry run python --version
+      - name: Build documentation with make
+        run: cd docs && poetry run make clean html
+      - name: Check Black
+        run: poetry run black . --check
+      - name: Build documentation with Sphinx
+        run: poetry run sphinx-build -b html docs docs/_build
+      - name: Run full test suite
+        run: poetry run pytest
